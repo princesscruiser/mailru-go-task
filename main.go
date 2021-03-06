@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"mailru-go-task/pkg/refgraph"
+)
 
 func main() {
-	fmt.Println("Well Done")
+	fe := &refgraph.Node{}
+	fmt.Print(fe)
 }
