@@ -1,43 +1,71 @@
 package refgraph
 
-import "errors"
+import (
+	"math/rand"
+	"time"
+)
 
 type Node struct {
 	Id      int
-	value   int
+	Value   int
 	Sum     int
 	Childs  []*Node
 	Parents []*Node
 }
 
-type GenerationMode int
-
-const (
-	AcyclicMode = GenerationMode(0)
-	CyclicMode  = GenerationMode(1)
-)
-
-func GenerateGraph(root *Node, genMode GenerationMode, depth int, childCount int) (map[string]interface{}, error) {
-	err := checkArgs(root, genMode, depth, childCount)
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
+type GenSettings struct {
+	Cycles    bool
+	MaxDepth  uint
+	MaxChilds uint
+	NodeCount uint
 }
 
-func checkArgs(root *Node, genMode GenerationMode, depth int, childCount int) error {
-	if root == nil {
-		return errors.New("root variable is nil")
-	}
-	if genMode > 1 {
-		return errors.New("incorrect generation mode")
-	}
-	if depth < 1 {
-		return errors.New("incorrect depth variable")
+var (
+	lastId int
+)
+
+func Generate(root *Node, genSettings GenSettings) error {
+	if err := checkArgs(root, genSettings); err != nil {
+		return err
 	}
 
-	if childCount < 0 {
-		return errors.New("child count set below zero")
+	lastId = 0
+
+	if err := generateRecursively(root, int(genSettings.MaxChilds), int(genSettings.MaxDepth), int(genSettings.NodeCount)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkArgs(root *Node, genSettings GenSettings) error {
+	return nil
+}
+
+func generateRecursively(parentNode *Node, maxChilds, depthLeft, nodesLeft int) error {
+	rand.Seed(time.Now().UTC().UnixNano())
+	if nodesLeft > 0 {
+		chCount := rand.Intn(maxChilds + 1)
+		childs := make([]*Node, 0, chCount)
+		for i := 0; i < chCount; i++ {
+			rand.Seed(time.Now().UTC().UnixNano())
+			value := rand.Intn(100)
+			parents := make([]*Node, 0, 1)
+			parents = append(parents, parentNode)
+			child := &Node{
+				Id:      lastId,
+				Value:   value,
+				Parents: parents,
+			}
+			childs = append(childs, child)
+			lastId++
+		}
+		nodesLeft -= chCount
+		depthLeft--
+		if depthLeft > 0 {
+			for _, v := range childs {
+				generateRecursively(v, maxChilds, depthLeft, nodesLeft)
+			}
+		}
 	}
 	return nil
 }
